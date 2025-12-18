@@ -94,49 +94,55 @@ class _ChannelListPageState extends State<ChannelListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      alignment: Alignment.topLeft,
-      padding: EdgeInsets.only(top: 20),
+    return GestureDetector(
+      onTap: () {
+        Get.back();
+      },
+      behavior: HitTestBehavior.translucent,
       child: Container(
-        width: MediaQuery.of(context).size.width / 2.0,
-        margin: EdgeInsets.only(left: 40),
-        child: EasyRefresh(
-          onRefresh: refreshData,
-          onLoad: loadMoreData,
-          header: const CupertinoHeader(),
-          footer: const CupertinoFooter(),
-          child: Obx(() {
-            return ListView.builder(
-              itemCount: playPageController.channelsGroup.length,
-              controller: scrollController,
-              itemBuilder: (context, index) {
-                final channel = playPageController.channelsGroup[index];
-                return SizedBox(
-                  height: cellHeight,
-                  child: ListTile(
-                    title: Text(
-                      channel.name,
-                      style: TextStyle(
-                        color: currentChannel.name == channel.name
-                            ? Colors.blue
-                            : Colors.white,
+        alignment: Alignment.topLeft,
+        padding: EdgeInsets.only(top: 20),
+        child: Container(
+          width: MediaQuery.of(context).size.width / 2.0,
+          margin: EdgeInsets.only(left: 40),
+          child: EasyRefresh(
+            onRefresh: refreshData,
+            onLoad: loadMoreData,
+            header: CupertinoHeader(foregroundColor: Colors.blue),
+            footer: CupertinoFooter(foregroundColor: Colors.blue),
+            child: Obx(() {
+              return ListView.builder(
+                itemCount: playPageController.channelsGroup.length,
+                controller: scrollController,
+                itemBuilder: (context, index) {
+                  final channel = playPageController.channelsGroup[index];
+                  return SizedBox(
+                    height: cellHeight,
+                    child: ListTile(
+                      title: Text(
+                        channel.name,
+                        style: TextStyle(
+                          color: currentChannel.name == channel.name
+                              ? Colors.blue
+                              : Colors.white,
+                        ),
                       ),
+                      subtitle: channel.groupTitle != null
+                          ? Text(
+                              channel.groupTitle ?? '',
+                              style: const TextStyle(color: Colors.grey),
+                            )
+                          : null,
+                      onTap: () {
+                        widget.selectChannelFunc(channel);
+                        Get.back();
+                      },
                     ),
-                    subtitle: channel.groupTitle != null
-                        ? Text(
-                            channel.groupTitle ?? '',
-                            style: const TextStyle(color: Colors.grey),
-                          )
-                        : null,
-                    onTap: () {
-                      widget.selectChannelFunc(channel);
-                      Get.back();
-                    },
-                  ),
-                );
-              },
-            );
-          }),
+                  );
+                },
+              );
+            }),
+          ),
         ),
       ),
     );

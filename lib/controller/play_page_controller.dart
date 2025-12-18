@@ -9,6 +9,7 @@ class PlayPageController extends GetxController {
   late ChannelRequestService _channelService;
   RxBool isLoading = false.obs;
   RxBool hasMore = true.obs;
+  RxBool isSwitching = false.obs;
 
   Rx<IPTVChannel?> currentChannel = Rx<IPTVChannel?>(null);
 

@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cli_flutter/models/iptv_channel.dart';
 import 'package:get/get.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class PlayerPage extends StatefulWidget {
   const PlayerPage({super.key});
@@ -36,6 +38,8 @@ class _PlayerPageState extends State<PlayerPage> {
       DeviceOrientation.landscapeRight,
     ]);
 
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+
     _loadChannels();
 
     // 监听遥控器按键事件
@@ -51,6 +55,11 @@ class _PlayerPageState extends State<PlayerPage> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
+
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: SystemUiOverlay.values,
+    );
 
     HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
     _controller.dispose();
@@ -84,6 +93,7 @@ class _PlayerPageState extends State<PlayerPage> {
         autoPlay: true,
         autoDetectFullscreenDeviceOrientation: true,
         // 使用BetterPlayer的overlay机制来添加覆盖层
+        fit: BoxFit.fitHeight,
         overlay: _buildPlayerOverlay(),
         eventListener: (BetterPlayerEvent event) {
           if (event.betterPlayerEventType == BetterPlayerEventType.play) {
@@ -115,6 +125,34 @@ class _PlayerPageState extends State<PlayerPage> {
 
   // 构建播放器覆盖层
   Widget _buildPlayerOverlay() {
+    return Stack(
+      children: [
+        // 频道信息显示
+        // Positioned(
+        //   top: 50,
+        //   left: 20,
+        //   child: Container(
+        //     padding: const EdgeInsets.all(8),
+        //     decoration: BoxDecoration(
+        //       color: Colors.black54,
+        //       borderRadius: BorderRadius.circular(8),
+        //     ),
+        //     child: Text(
+        //       _currentChannel?.name ?? '',
+        //       style: const TextStyle(color: Colors.white, fontSize: 16),
+        //     ),
+        //   ),
+        // ),
+        // 点击区域覆盖在整个播放器上
+        Positioned.fill(
+          child: GestureDetector(
+            onTap: _toggleChannelList,
+            behavior: HitTestBehavior.translucent,
+            child: Container(color: Colors.transparent),
+          ),
+        ),
+      ],
+    );
     return Obx(() {
       return Stack(
         children: [
@@ -197,6 +235,14 @@ class _PlayerPageState extends State<PlayerPage> {
                       child: CircularProgressIndicator(color: Colors.white),
                     )
                   : SizedBox(),
+              _playPageController.isSwitching.value == true
+                  ? const Center(
+                      child: SpinKitRotatingCircle(
+                        color: Colors.white,
+                        size: 50.0,
+                      ),
+                    )
+                  : SizedBox(),
             ],
           ),
         );
@@ -213,16 +259,29 @@ class _PlayerPageState extends State<PlayerPage> {
   }
 
   void _selectChannel(IPTVChannel channel) async {
+    //记录当前的_currentChannel
+    _playPageController.isSwitching.value = true;
+    IPTVChannel? recordChannel = _currentChannel;
     try {
+      _currentChannel = channel;
       var dataSource = BetterPlayerDataSource(
         BetterPlayerDataSourceType.network,
         channel.streamUrl,
         liveStream: true,
       );
       await _controller.setupDataSource(dataSource);
-      _currentChannel = channel;
     } catch (e) {
       if (_currentChannel != null) {
+        Fluttertoast.showToast(
+          msg: "${_currentChannel?.name}频道播放失败",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.CENTER,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+
+        _currentChannel = recordChannel;
         var dataSource = BetterPlayerDataSource(
           BetterPlayerDataSourceType.network,
           _currentChannel!.streamUrl,
@@ -231,5 +290,6 @@ class _PlayerPageState extends State<PlayerPage> {
         await _controller.setupDataSource(dataSource);
       }
     }
+    _playPageController.isSwitching.value = false;
   }
 }
