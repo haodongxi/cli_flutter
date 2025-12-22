@@ -61,8 +61,14 @@ class IPTVChannelVariant {
   final String streamUrl;
   final String? logoUrl;
   final String? groupTitle;
+  final String? name;
 
-  IPTVChannelVariant({required this.streamUrl, this.logoUrl, this.groupTitle});
+  IPTVChannelVariant({
+    required this.streamUrl,
+    this.logoUrl,
+    this.groupTitle,
+    this.name,
+  });
 
   factory IPTVChannelVariant.fromJson(Map<String, dynamic> json) {
     return IPTVChannelVariant(
@@ -73,23 +79,15 @@ class IPTVChannelVariant {
       groupTitle: json['attributes'] != null
           ? json['attributes']['group-title'] as String?
           : null,
+      name: json['attributes'] != null
+          ? json['attributes']['tvg-name'] as String?
+          : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['stream_url'] = streamUrl;
-
-    if (logoUrl != null || groupTitle != null) {
-      data['attributes'] = <String, String?>{};
-      if (logoUrl != null) {
-        data['attributes']['tvg-logo'] = logoUrl;
-      }
-      if (groupTitle != null) {
-        data['attributes']['group-title'] = groupTitle;
-      }
-    }
-
     return data;
   }
 }

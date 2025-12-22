@@ -1,29 +1,30 @@
 import 'package:cli_flutter/controller/play_page_controller.dart';
-import 'package:cli_flutter/models/iptv_channel.dart';
-import 'package:cli_flutter/pages/child_channel_list_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:easy_refresh/easy_refresh.dart';
 
-class ChannelListPage extends StatefulWidget {
+import '../models/iptv_channel.dart';
+
+class ChildChannelListPage extends StatefulWidget {
   final PlayPageController playPageController;
-  final void Function(IPTVChannel) selectChannelFunc;
-  final IPTVChannel currentChannel;
+  final void Function(IPTVChannelVariant) selectChannelFunc;
+  final IPTVChannel? clickChannel;
 
-  const ChannelListPage({
+  const ChildChannelListPage({
     super.key,
     required this.playPageController,
     required this.selectChannelFunc,
-    required this.currentChannel,
+    required this.clickChannel,
   });
 
   @override
-  State createState() => _ChannelListPageState();
+  State<StatefulWidget> createState() {
+    return _ChildChannelListPageState();
+  }
 
   static Future<void> show(
     PlayPageController playPageController,
-    void Function(IPTVChannel) selectChannelFunc,
-    IPTVChannel currentChannel,
+    void Function(IPTVChannelVariant) selectChannelFunc,
+    IPTVChannel? clickChannel,
   ) async {
     // 直接使用 Flutter 原生的 showModalBottomSheet
     await showModalBottomSheet(
@@ -40,10 +41,10 @@ class ChannelListPage extends StatefulWidget {
       builder: (context) {
         // 在 builder 中返回你的页面实例
         return SafeArea(
-          child: ChannelListPage(
+          child: ChildChannelListPage(
             playPageController: playPageController,
             selectChannelFunc: selectChannelFunc,
-            currentChannel: currentChannel,
+            clickChannel: clickChannel,
           ),
         );
       },
@@ -51,7 +52,7 @@ class ChannelListPage extends StatefulWidget {
   }
 }
 
-class _ChannelListPageState extends State<ChannelListPage> {
+class _ChildChannelListPageState extends State<ChildChannelListPage> {
   double get cellHeight {
     return 60.0;
   }
@@ -60,8 +61,12 @@ class _ChannelListPageState extends State<ChannelListPage> {
     return widget.playPageController;
   }
 
-  IPTVChannel get currentChannel {
-    return widget.currentChannel;
+  IPTVChannelVariant? get currentChildChannel {
+    return playPageController.currentChildChannel.value;
+  }
+
+  IPTVChannel? get currentChannel {
+    return widget.clickChannel;
   }
 
   late ScrollController scrollController;
@@ -71,9 +76,10 @@ class _ChannelListPageState extends State<ChannelListPage> {
     super.initState();
     scrollController = ScrollController();
     WidgetsBinding.instance.addPostFrameCallback((t) {
-      if (playPageController.channelsGroup.isNotEmpty == true) {
-        int index = playPageController.channelsGroup.indexWhere((e) {
-          return e.streamUrl == currentChannel.streamUrl;
+      if (currentChannel?.variants.isNotEmpty == true &&
+          currentChildChannel != null) {
+        int index = currentChannel!.variants.indexWhere((e) {
+          return e.streamUrl == currentChildChannel!.streamUrl;
         });
         if (index != -1) {
           double offset = index * cellHeight;
@@ -102,31 +108,20 @@ class _ChannelListPageState extends State<ChannelListPage> {
       behavior: HitTestBehavior.translucent,
       child: Container(
         alignment: Alignment.topLeft,
-        padding: EdgeInsets.only(top: 20),
-        child: Container(
-          margin: EdgeInsets.only(left: 40),
-          child: EasyRefresh(
-            onRefresh: refreshData,
-            onLoad: loadMoreData,
-            header: CupertinoHeader(foregroundColor: Colors.blue),
-            footer: CupertinoFooter(foregroundColor: Colors.blue),
-            child: Obx(() {
-              return ListView.builder(
-                itemCount: playPageController.channelsGroup.length,
-                controller: scrollController,
-                itemBuilder: (context, index) {
-                  final channel = playPageController.channelsGroup[index];
-                  return _buildChannelItem(channel);
-                },
-              );
-            }),
-          ),
+        padding: EdgeInsets.only(top: 20, left: 40),
+        child: ListView.builder(
+          itemCount: currentChannel?.variants.length ?? 0,
+          controller: scrollController,
+          itemBuilder: (context, index) {
+            final channel = currentChannel!.variants[index];
+            return _buildChannelItem(channel, index);
+          },
         ),
       ),
     );
   }
 
-  Widget _buildChannelItem(IPTVChannel channel) {
+  Widget _buildChannelItem(IPTVChannelVariant channel, int index) {
     return SizedBox(
       height: cellHeight,
       child: Row(
@@ -136,7 +131,6 @@ class _ChannelListPageState extends State<ChannelListPage> {
         children: [
           GestureDetector(
             onTap: () {
-              widget.selectChannelFunc(channel);
               Get.back();
             },
             behavior: HitTestBehavior.translucent,
@@ -146,9 +140,9 @@ class _ChannelListPageState extends State<ChannelListPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  channel.name,
+                  "${channel.name ?? ''}    ${index + 1}号",
                   style: TextStyle(
-                    color: currentChannel.name == channel.name
+                    color: currentChildChannel?.name == channel.name
                         ? Colors.blue
                         : Colors.white,
                   ),
@@ -160,40 +154,8 @@ class _ChannelListPageState extends State<ChannelListPage> {
               ],
             ),
           ),
-          channel.variants.isNotEmpty == true
-              ? GestureDetector(
-                  onTap: () {
-                    Get.back();
-                    ChildChannelListPage.show(
-                      playPageController,
-                      selectChildItem,
-                      channel,
-                    );
-                  },
-                  behavior: HitTestBehavior.translucent,
-                  child: Container(
-                    margin: EdgeInsets.only(left: 40),
-                    padding: EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: Text('换源', style: TextStyle(color: Colors.red)),
-                  ),
-                )
-              : SizedBox(),
         ],
       ),
     );
-  }
-
-  Future<void> selectChildItem(IPTVChannelVariant item) async {}
-
-  Future<void> refreshData() async {
-    await playPageController.loadChannels(isRefresh: true);
-  }
-
-  Future<void> loadMoreData() async {
-    await playPageController.loadChannels(isRefresh: false);
   }
 }
