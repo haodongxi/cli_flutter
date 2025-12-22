@@ -1,8 +1,11 @@
 import 'package:cli_flutter/pages/player_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mmkv/mmkv.dart';
 
-void main() {
+void main() async {
+  final rootDir = await MMKV.initialize();
+  print("mmkv init $rootDir");
   runApp(const MyApp());
 }
 
@@ -18,9 +21,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       initialRoute: '/player',
-      getPages: [
-        GetPage(name: '/player', page: () => const PlayerPage()),
-      ],
+      getPages: [GetPage(name: '/player', page: () => const PlayerPage())],
       debugShowCheckedModeBanner: false,
     );
   }

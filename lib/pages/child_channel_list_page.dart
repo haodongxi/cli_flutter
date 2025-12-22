@@ -140,7 +140,7 @@ class _ChildChannelListPageState extends State<ChildChannelListPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  "${channel.name ?? ''}    ${index + 1}号",
+                  "${channel.name ?? ''}    频道${index + 1}",
                   style: TextStyle(
                     color: currentChildChannel?.name == channel.name
                         ? Colors.blue
