@@ -8,6 +8,7 @@ import 'package:easy_refresh/easy_refresh.dart';
 class ChannelListPage extends StatefulWidget {
   final PlayPageController playPageController;
   final void Function(IPTVChannel) selectChannelFunc;
+  final void Function(IPTVChannel, IPTVChannelVariant) selectChildChannelFunc;
   final IPTVChannel currentChannel;
 
   const ChannelListPage({
@@ -15,6 +16,7 @@ class ChannelListPage extends StatefulWidget {
     required this.playPageController,
     required this.selectChannelFunc,
     required this.currentChannel,
+    required this.selectChildChannelFunc,
   });
 
   @override
@@ -24,6 +26,7 @@ class ChannelListPage extends StatefulWidget {
     PlayPageController playPageController,
     void Function(IPTVChannel) selectChannelFunc,
     IPTVChannel currentChannel,
+    void Function(IPTVChannel, IPTVChannelVariant) selectChildChannelFunc,
   ) async {
     // 直接使用 Flutter 原生的 showModalBottomSheet
     await showModalBottomSheet(
@@ -44,6 +47,7 @@ class ChannelListPage extends StatefulWidget {
             playPageController: playPageController,
             selectChannelFunc: selectChannelFunc,
             currentChannel: currentChannel,
+            selectChildChannelFunc: selectChildChannelFunc,
           ),
         );
       },
@@ -164,11 +168,9 @@ class _ChannelListPageState extends State<ChannelListPage> {
               ? GestureDetector(
                   onTap: () {
                     Get.back();
-                    ChildChannelListPage.show(
-                      playPageController,
-                      selectChildItem,
-                      channel,
-                    );
+                    ChildChannelListPage.show(playPageController, (item) {
+                      selectChildItem(channel, item);
+                    }, channel);
                   },
                   behavior: HitTestBehavior.translucent,
                   child: Container(
@@ -187,7 +189,9 @@ class _ChannelListPageState extends State<ChannelListPage> {
     );
   }
 
-  Future<void> selectChildItem(IPTVChannelVariant item) async {}
+  void selectChildItem(IPTVChannel channelItem, IPTVChannelVariant item) {
+    widget.selectChildChannelFunc(channelItem, item);
+  }
 
   Future<void> refreshData() async {
     await playPageController.loadChannels(isRefresh: true);

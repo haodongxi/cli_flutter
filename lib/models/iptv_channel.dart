@@ -48,11 +48,9 @@ class IPTVChannel {
         data['attributes']['group-title'] = groupTitle;
       }
     }
-
     if (variants.isNotEmpty) {
       data['childlist'] = variants.map((v) => v.toJson()).toList();
     }
-
     return data;
   }
 }
@@ -62,12 +60,14 @@ class IPTVChannelVariant {
   final String? logoUrl;
   final String? groupTitle;
   final String? name;
+  bool selectState;
 
   IPTVChannelVariant({
     required this.streamUrl,
     this.logoUrl,
     this.groupTitle,
     this.name,
+    this.selectState = false,
   });
 
   factory IPTVChannelVariant.fromJson(Map<String, dynamic> json) {
@@ -82,12 +82,19 @@ class IPTVChannelVariant {
       name: json['attributes'] != null
           ? json['attributes']['tvg-name'] as String?
           : null,
+      selectState: json['select_state'] ?? false,
     );
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['stream_url'] = streamUrl;
+    data['select_state'] = selectState;
+    data['attributes'] = {
+      "tvg-logo": logoUrl ?? '',
+      "group-title": groupTitle ?? '',
+      "tvg-name": name ?? '',
+    };
     return data;
   }
 }

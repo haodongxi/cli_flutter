@@ -1,4 +1,5 @@
 import 'package:cli_flutter/controller/play_page_controller.dart';
+import 'package:cli_flutter/services/channel_cache_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -62,7 +63,10 @@ class _ChildChannelListPageState extends State<ChildChannelListPage> {
   }
 
   IPTVChannelVariant? get currentChildChannel {
-    return playPageController.currentChildChannel.value;
+    ChannelCacheManager.shareInstance.getSelectCacheChild(currentChannel);
+    return currentChannel?.variants.firstWhereOrNull((e) {
+      return e.selectState == true;
+    });
   }
 
   IPTVChannel? get currentChannel {
@@ -131,6 +135,7 @@ class _ChildChannelListPageState extends State<ChildChannelListPage> {
         children: [
           GestureDetector(
             onTap: () {
+              widget.selectChannelFunc(channel);
               Get.back();
             },
             behavior: HitTestBehavior.translucent,
@@ -142,7 +147,9 @@ class _ChildChannelListPageState extends State<ChildChannelListPage> {
                 Text(
                   "${channel.name ?? ''}    频道${index + 1}",
                   style: TextStyle(
-                    color: currentChildChannel?.name == channel.name
+                    color:
+                        currentChildChannel?.name == channel.name &&
+                            currentChildChannel?.streamUrl == channel.streamUrl
                         ? Colors.blue
                         : Colors.white,
                   ),

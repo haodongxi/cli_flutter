@@ -11,7 +11,6 @@ class PlayPageController extends GetxController {
   RxBool hasMore = true.obs;
   RxBool isSwitching = false.obs;
   Rx<IPTVChannel?> currentChannel = Rx<IPTVChannel?>(null);
-  Rx<IPTVChannelVariant?> currentChildChannel = Rx<IPTVChannelVariant?>(null);
 
   PlayPageController();
 

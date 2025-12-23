@@ -1,6 +1,7 @@
 import 'package:better_player_plus/better_player_plus.dart';
 import 'package:cli_flutter/controller/play_page_controller.dart';
 import 'package:cli_flutter/pages/channel_list_page.dart';
+import 'package:cli_flutter/services/channel_cache_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cli_flutter/models/iptv_channel.dart';
@@ -255,6 +256,7 @@ class _PlayerPageState extends State<PlayerPage> {
       _playPageController,
       _selectChannel,
       _currentChannel ?? _playPageController.channelsGroup.first,
+      _selectChildChannel,
     );
   }
 
@@ -291,5 +293,62 @@ class _PlayerPageState extends State<PlayerPage> {
       }
     }
     _playPageController.isSwitching.value = false;
+  }
+
+  Future<void> _selectChildChannel(
+    IPTVChannel channel,
+    IPTVChannelVariant childItem,
+  ) async {
+    //记录当前的_currentChannel
+    _playPageController.isSwitching.value = true;
+    IPTVChannel? recordChannel = _currentChannel;
+    try {
+      _currentChannel = channel;
+      childItem.selectState = true;
+      var dataSource = BetterPlayerDataSource(
+        BetterPlayerDataSourceType.network,
+        childItem.streamUrl,
+        liveStream: true,
+      );
+      await _controller.setupDataSource(dataSource);
+      //播放成功，进行channel缓存
+      ChannelCacheManager.shareInstance.cacheChannel(channel);
+    } catch (e) {
+      if (_currentChannel != null) {
+        childItem.selectState = false;
+        Fluttertoast.showToast(
+          msg: "${_currentChannel?.name}频道播放失败",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.CENTER,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0,
+        );
+        _currentChannel = recordChannel;
+        var dataSource = BetterPlayerDataSource(
+          BetterPlayerDataSourceType.network,
+          getNeedPlayStream(_currentChannel!),
+          liveStream: true,
+        );
+        await _controller.setupDataSource(dataSource);
+      }
+    }
+    _playPageController.isSwitching.value = false;
+  }
+
+  ///获取当前选择饿的子频道
+  IPTVChannelVariant? getSelectChildChannelItem(IPTVChannel? channel) {
+    return channel?.variants.firstWhereOrNull((e) {
+      return e.selectState == true;
+    });
+  }
+
+  ///获取当前需要播放的url
+  String getNeedPlayStream(IPTVChannel channel) {
+    IPTVChannelVariant? childItem = getSelectChildChannelItem(channel);
+    if (childItem != null) {
+      return childItem.streamUrl;
+    }
+    return channel.streamUrl;
   }
 }
