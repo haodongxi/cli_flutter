@@ -14,7 +14,7 @@ class ChannelCacheManager {
     _mmkv = MMKV.defaultMMKV();
   }
 
-  ///缓存频道
+  ///缓存选中的子频道
   bool cacheChannel(IPTVChannel? channel) {
     try {
       if (channel != null) {
@@ -37,6 +37,29 @@ class ChannelCacheManager {
       }
     }
     return false;
+  }
+
+  ///删除缓存选中的子频道
+  ///当选中主源的时候，清除该缓存
+  void deleteCacheCahnnel(IPTVChannel? channel) {
+    try {
+      if (channel != null) {
+        String channelName = channel.name;
+        Map<String, dynamic> json = channel.toJson();
+        if (channelName.isNotEmpty == true && json.isNotEmpty == true) {
+          String key = '$MMKV_Channel_Key$channelName';
+          //先判断是否存在，存在直接进行删除
+          bool containKey = _mmkv.containsKey(key);
+          if (containKey) {
+            _mmkv.removeValue(key);
+          }
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print(e.toString());
+      }
+    }
   }
 
   ///获取当前选中缓存的子频道

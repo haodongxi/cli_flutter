@@ -7,7 +7,7 @@ import '../models/iptv_channel.dart';
 
 class ChildChannelListPage extends StatefulWidget {
   final PlayPageController playPageController;
-  final void Function(IPTVChannelVariant) selectChannelFunc;
+  final void Function(IPTVChannelVariant?) selectChannelFunc;
   final IPTVChannel? clickChannel;
 
   const ChildChannelListPage({
@@ -24,7 +24,7 @@ class ChildChannelListPage extends StatefulWidget {
 
   static Future<void> show(
     PlayPageController playPageController,
-    void Function(IPTVChannelVariant) selectChannelFunc,
+    void Function(IPTVChannelVariant?) selectChannelFunc,
     IPTVChannel? clickChannel,
   ) async {
     // 直接使用 Flutter 原生的 showModalBottomSheet
@@ -86,7 +86,7 @@ class _ChildChannelListPageState extends State<ChildChannelListPage> {
           return e.streamUrl == currentChildChannel!.streamUrl;
         });
         if (index != -1) {
-          double offset = index * cellHeight;
+          double offset = (index + 1) * cellHeight;
           scrollController.animateTo(
             offset,
             duration: Duration(milliseconds: 500),
@@ -114,13 +114,51 @@ class _ChildChannelListPageState extends State<ChildChannelListPage> {
         alignment: Alignment.topLeft,
         padding: EdgeInsets.only(top: 20, left: 40),
         child: ListView.builder(
-          itemCount: currentChannel?.variants.length ?? 0,
+          itemCount: (currentChannel?.variants.length ?? 0) + 1,
           controller: scrollController,
           itemBuilder: (context, index) {
-            final channel = currentChannel!.variants[index];
-            return _buildChannelItem(channel, index);
+            if (index == 0) {
+              return _buildMainSourceItem();
+            }
+            final channel = currentChannel!.variants[index - 1];
+            return _buildChannelItem(channel, index - 1);
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildMainSourceItem() {
+    return SizedBox(
+      height: cellHeight,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GestureDetector(
+            onTap: () {
+              widget.selectChannelFunc(null);
+              Get.back();
+            },
+            behavior: HitTestBehavior.translucent,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "主源",
+                  style: TextStyle(
+                    color: currentChildChannel == null
+                        ? Colors.blue
+                        : Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

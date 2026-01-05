@@ -272,6 +272,9 @@ class _PlayerPageState extends State<PlayerPage> {
         liveStream: true,
       );
       await _controller.setupDataSource(dataSource);
+      //清除缓存选中的子频道
+      cancelChildSelectState(channel);
+      ChannelCacheManager.shareInstance.deleteCacheCahnnel(channel);
     } catch (e) {
       if (_currentChannel != null) {
         Fluttertoast.showToast(
@@ -297,9 +300,13 @@ class _PlayerPageState extends State<PlayerPage> {
 
   Future<void> _selectChildChannel(
     IPTVChannel channel,
-    IPTVChannelVariant childItem,
+    IPTVChannelVariant? childItem,
   ) async {
     //记录当前的_currentChannel
+    if (childItem == null) {
+      _selectChannel(channel);
+      return;
+    }
     _playPageController.isSwitching.value = true;
     IPTVChannel? recordChannel = _currentChannel;
     try {
@@ -350,5 +357,14 @@ class _PlayerPageState extends State<PlayerPage> {
       return childItem.streamUrl;
     }
     return channel.streamUrl;
+  }
+
+  ///取消所有子频道的选中
+  void cancelChildSelectState(IPTVChannel? channel) {
+    if (channel != null) {
+      for (var e in channel.variants) {
+        e.selectState = false;
+      }
+    }
   }
 }

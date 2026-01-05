@@ -4,8 +4,7 @@ import 'package:get/get.dart';
 import 'package:mmkv/mmkv.dart';
 
 void main() async {
-  final rootDir = await MMKV.initialize();
-  print("mmkv init $rootDir");
+  await MMKV.initialize();
   runApp(const MyApp());
 }
 
